@@ -1,48 +1,32 @@
-import os
-from docx2pdf import convert as docx2pdf_convert
-from PIL import Image
-from fpdf import FPDF
-import pdfkit
+import argparse
+import sys
+from pathlib import Path
 
-def convert_to_pdf(input_path):
-    if not os.path.exists(input_path):
-        print("File not found:", input_path)
-        return
+from src.config import ACTION_AUTO
+from src.converter import convert_files
 
-    filename, ext = os.path.splitext(input_path)
-    ext = ext.lower()
 
-    output_path = filename + ".pdf"
+def main(argv=None):
+    parser = argparse.ArgumentParser(description="Local-only file to PDF converter.")
+    parser.add_argument("input", nargs="+", help="One or more files to convert.")
+    parser.add_argument("-o", "--output", default="output", help="Output directory.")
+    args = parser.parse_args(argv)
 
+    files = [Path(item) for item in args.input]
     try:
-        if ext == ".docx":
-            docx2pdf_convert(input_path, output_path)
-            print("Converted DOCX to PDF:", output_path)
+        summary = convert_files(files, args.output, ACTION_AUTO, log_callback=print)
+    except Exception as exc:
+        print(f"Could not start conversion: {exc}")
+        return 1
 
-        elif ext in [".jpg", ".jpeg", ".png"]:
-            image = Image.open(input_path).convert("RGB")
-            image.save(output_path)
-            print("Converted image to PDF:", output_path)
-
-        elif ext == ".txt":
-            pdf = FPDF()
-            pdf.add_page()
-            pdf.set_font("Arial", size=12)
-            with open(input_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    pdf.cell(200, 10, txt=line.strip(), ln=True)
-            pdf.output(output_path)
-            print("Converted TXT to PDF:", output_path)
-
-        elif ext == ".html":
-            pdfkit.from_file(input_path, output_path)
-            print("Converted HTML to PDF:", output_path)
-
+    for result in summary.results:
+        if result.success:
+            for output in result.outputs:
+                print(f"Created: {output}")
         else:
-            print(f"Unsupported file type: {ext}")
+            print(result.message)
+    return 0 if summary.ok else 2
 
-    except Exception as e:
-        print("Error converting file:", e)
 
-# Example usage:
-# convert_to_pdf("example.docx")
+if __name__ == "__main__":
+    sys.exit(main())

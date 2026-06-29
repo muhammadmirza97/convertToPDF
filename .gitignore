@@ -1,0 +1,13 @@
+__pycache__/
+*.pyc
+.venv/
+*.pyo
+*.pyd
+.pytest_cache/
+logs/*.log
+output/*
+!output/.gitkeep
+sample_files/generated_*
+build/
+dist/
+*.spec
