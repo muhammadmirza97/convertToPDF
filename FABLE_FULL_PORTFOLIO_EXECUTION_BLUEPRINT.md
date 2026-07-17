@@ -109,7 +109,7 @@ Tracker (executor updates statuses in place):
 [x] FIX-01     side-effect-free output validation
 [x] FIX-02     pdf_to_text validate-before-reserve
 [x] FIX-03     GUI thread-safety + button lock
-[ ] FIX-04     log rotation
+[x] FIX-04     log rotation
 [ ] FIX-05     CREATE_NO_WINDOW for soffice
 [ ] TEST-01    regression tests for FIX-01/02
 [ ] DOC-01     README corrections
