@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import re
 from pathlib import Path
 
@@ -41,14 +42,18 @@ def ensure_directory(path: str | Path) -> Path:
 
 def is_writable_directory(path: str | Path) -> bool:
     try:
-        output_dir = ensure_directory(path)
-        probe = output_dir / ".write_test.tmp"
-        with probe.open("w", encoding="utf-8") as handle:
-            handle.write("ok")
-        probe.unlink(missing_ok=True)
-        return True
+        target = Path(path).expanduser().resolve()
     except OSError:
         return False
+    probe_dir = target
+    while not probe_dir.exists():
+        parent = probe_dir.parent
+        if parent == probe_dir:
+            return False
+        probe_dir = parent
+    if not probe_dir.is_dir():
+        return False
+    return os.access(probe_dir, os.W_OK)
 
 
 def sanitize_base_name(base_name: str | Path) -> str:
