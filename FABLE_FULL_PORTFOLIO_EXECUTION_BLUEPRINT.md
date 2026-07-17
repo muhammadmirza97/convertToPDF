@@ -105,7 +105,7 @@ Tracker (executor updates statuses in place):
 [x] ENV-02     remove img2pdf
 [x] ENV-03     fix Dockerfile clean-clone break
 [?] ENV-04     recreate .venv (manual, optional)
-[ ] SEC-01     remove setup_git.bat
+[x] SEC-01     remove setup_git.bat
 [ ] FIX-01     side-effect-free output validation
 [ ] FIX-02     pdf_to_text validate-before-reserve
 [ ] FIX-03     GUI thread-safety + button lock
