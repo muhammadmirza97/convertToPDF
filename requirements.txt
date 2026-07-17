@@ -1,7 +1,5 @@
-customtkinter
-pymupdf
-pypdf
-pillow
-img2pdf
-reportlab
-pytest
+customtkinter==6.0.0
+pymupdf==1.28.0
+pypdf==6.14.2
+pillow==12.2.0
+reportlab==5.0.0
