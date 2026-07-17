@@ -114,9 +114,9 @@ Tracker (executor updates statuses in place):
 [x] TEST-01    regression tests for FIX-01/02
 [x] DOC-01     README corrections
 [?] DOC-02     stray-artifact cleanup (user confirm)
-[?] TEST-02    Docker build+run validation
+[!] TEST-02    Docker build+run validation (blocked: Docker Desktop Linux engine is not running)
 [!] TEST-03    real Office-to-PDF verification (blocked: LibreOffice install is a user action)
-[ ] PORT-01    portfolio entry
+[x] PORT-01    portfolio entry
 ```
 
 ## 6 Per-project audit+implementation — LOCALPDF
@@ -356,21 +356,21 @@ Validation matrix (executor fills `actual`):
 
 | project | valID | env | stage | command | expected | actual | status | blocker |
 |---|---|---|---|---|---|---|---|---|
-| LOCALPDF | V1 | fresh venv | install | §H V1 | exit 0 | — | [ ] | — |
-| LOCALPDF | V2 | venv | deps | §H V2 | no broken reqs | — | [ ] | — |
-| LOCALPDF | V3 | venv | unit/integration | §H V3 | 25+ passed | — | [ ] | — |
-| LOCALPDF | V4 | venv | compile | §H V4 | exit 0 | — | [ ] | — |
-| LOCALPDF | V5 | venv | E2E pipeline | §H V5 | Created: *.pdf | — | [ ] | — |
-| LOCALPDF | V6 | venv+display | UI smoke | §H V6 | GUI_SMOKE_OK | — | [ ] | — |
-| LOCALPDF | V7 | Docker | container tests | §H V7 | tests pass | — | [?] | Docker availability U |
-| LOCALPDF | V8 | repo | security grep | §H V8 | no hits | — | [ ] | — |
-| LOCALPDF | V9 | manual | Office real run | §H V9 | PDF output | — | [!] | LibreOffice user install |
+| LOCALPDF | V1 | fresh venv | install | §H V1 | exit 0 | pinned requirements installed successfully | [x] | — |
+| LOCALPDF | V2 | venv | deps | §H V2 | no broken reqs | `No broken requirements found.` | [x] | — |
+| LOCALPDF | V3 | venv | unit/integration | §H V3 | 25+ passed | `25 passed, 1 warning in 1.20s` | [x] | pytest cache warning: access denied; tests unaffected |
+| LOCALPDF | V4 | venv | compile | §H V4 | exit 0 | exit 0, no output | [x] | — |
+| LOCALPDF | V5 | venv | E2E pipeline | §H V5 | Created: *.pdf | `Converted notes.txt`; `Created: ...\\output\\notes.pdf` | [x] | — |
+| LOCALPDF | V6 | venv+display | UI smoke | §H V6 | GUI_SMOKE_OK | `GUI_SMOKE_OK` | [x] | — |
+| LOCALPDF | V7 | Docker | container tests | §H V7 | tests pass | Docker API connection failed | [!] | Docker Desktop Linux engine is not running |
+| LOCALPDF | V8 | repo | security grep | §H V8 | no hits | `NO_CREDENTIAL_HITS` | [x] | — |
+| LOCALPDF | V9 | manual | Office real run | §H V9 | PDF output | not run | [!] | LibreOffice user install and a real Office input are required |
 
 Readiness matrix:
 
 | project | state | strongest skill | weakest area | role relevance | repro | functional | pipeline | design | deploy | presentation | portfolio value | next |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| LOCALPDF | Working w/ known weaknesses | defensive file handling + tests | env pinning / unverified Office+Docker | SWE/QA (not ML) | medium→high after ENV | high | high (local) | good | venv+Docker(tests) | README solid after DOC-01 | medium | execute tracker |
+| LOCALPDF | Ready with external validation blockers | defensive file handling + tests | unverified Office+Docker runtime | SWE/QA (not ML) | high | high | high (local) | good | venv verified; Docker blocked | README corrected | medium | run Docker and real Office checks when dependencies are available |
 
 Final boundary proof: every path read or listed in this audit resolves under `C:\dev\PDF Converter\`; the sole recorded external strings (GitHub URL, LibreOffice paths, stale OneDrive path inside `pyvenv.cfg`, system Python home) were **recorded from in-ROOT file contents and never accessed**; the only file created is this blueprint at ROOT; no project file was modified (verifiable: `git status` shows only `?? sample_files/` pre-existing plus this new untracked `.md`).
 
