@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from PIL import Image
 
 from src.config import ACTION_AUTO, ACTION_OFFICE_TO_PDF, ACTION_TXT_TO_PDF
@@ -34,12 +35,8 @@ def test_office_to_pdf_without_libreoffice_is_friendly(monkeypatch, workspace):
     docx = workspace / "letter.docx"
     docx.write_bytes(b"not a real docx")
 
-    try:
+    with pytest.raises(ValueError, match="LibreOffice"):
         convert_files([docx], workspace, ACTION_OFFICE_TO_PDF)
-    except ValueError as exc:
-        assert "LibreOffice" in str(exc)
-    else:
-        raise AssertionError("Expected missing LibreOffice validation failure")
 
 
 def test_batch_auto_reports_partial_failure_for_pdf_input(workspace):

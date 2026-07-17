@@ -111,7 +111,7 @@ Tracker (executor updates statuses in place):
 [x] FIX-03     GUI thread-safety + button lock
 [x] FIX-04     log rotation
 [x] FIX-05     CREATE_NO_WINDOW for soffice
-[ ] TEST-01    regression tests for FIX-01/02
+[x] TEST-01    regression tests for FIX-01/02
 [ ] DOC-01     README corrections
 [?] DOC-02     stray-artifact cleanup (user confirm)
 [?] TEST-02    Docker build+run validation

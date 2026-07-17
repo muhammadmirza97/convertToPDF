@@ -1,6 +1,18 @@
 from __future__ import annotations
 
-from src.output_paths import derived_folder, safe_output_path, sanitize_base_name
+from src.output_paths import (
+    derived_folder,
+    is_writable_directory,
+    safe_output_path,
+    sanitize_base_name,
+)
+
+
+def test_is_writable_directory_does_not_create_missing_dirs(workspace):
+    target = workspace / "no" / "such" / "nested"
+
+    assert is_writable_directory(target)
+    assert not (workspace / "no").exists()
 
 
 def test_safe_output_path_does_not_overwrite(workspace):

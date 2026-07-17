@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from reportlab.pdfgen import canvas
 from pypdf import PdfReader, PdfWriter
 
@@ -19,12 +20,8 @@ def test_parse_page_ranges():
 
 
 def test_parse_page_ranges_rejects_non_numeric_text():
-    try:
+    with pytest.raises(ValueError, match="numbers"):
         parse_page_ranges("one-three", 5)
-    except ValueError as exc:
-        assert "numbers" in str(exc)
-    else:
-        raise AssertionError("Expected ValueError")
 
 
 def test_merge_split_extract_and_render(workspace):
@@ -58,9 +55,24 @@ def test_encrypted_pdf_fails_gracefully(workspace):
     with encrypted.open("wb") as handle:
         writer.write(handle)
 
-    try:
+    with pytest.raises(ValueError, match="Encrypted PDF"):
         pdf_to_text(encrypted, workspace)
-    except ValueError as exc:
-        assert "Encrypted PDF" in str(exc)
-    else:
-        raise AssertionError("Expected encrypted PDF failure")
+
+
+def test_encrypted_pdf_text_does_not_create_output_dir(workspace):
+    plain = workspace / "plain_side_effect.pdf"
+    encrypted = workspace / "encrypted_side_effect.pdf"
+    _make_pdf(plain, pages=1)
+    reader = PdfReader(str(plain))
+    writer = PdfWriter()
+    for page in reader.pages:
+        writer.add_page(page)
+    writer.encrypt("secret")
+    with encrypted.open("wb") as handle:
+        writer.write(handle)
+    output = workspace / "fresh_out"
+
+    with pytest.raises(ValueError, match="Encrypted PDF"):
+        pdf_to_text(encrypted, output)
+
+    assert not output.exists()

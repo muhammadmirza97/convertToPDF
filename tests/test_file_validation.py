@@ -1,6 +1,11 @@
 from __future__ import annotations
 
-from src.config import ACTION_IMAGES_TO_SINGLE_PDF, ACTION_MERGE_PDFS, ACTION_OFFICE_TO_PDF
+from src.config import (
+    ACTION_IMAGES_TO_SINGLE_PDF,
+    ACTION_MERGE_PDFS,
+    ACTION_OFFICE_TO_PDF,
+    ACTION_TXT_TO_PDF,
+)
 from src.file_validation import detect_input_types, validate_action, validate_output_folder
 
 
@@ -62,3 +67,14 @@ def test_output_folder_rejects_existing_file_path(workspace):
 
     assert not result.ok
     assert "not writable" in result.message
+
+
+def test_validate_output_folder_has_no_side_effects(workspace):
+    source = workspace / "notes.txt"
+    source.write_text("sample", encoding="utf-8")
+    output = workspace / "typed" / "partial"
+
+    result = validate_action([source], output, ACTION_TXT_TO_PDF)
+
+    assert result.ok
+    assert not (workspace / "typed").exists()
