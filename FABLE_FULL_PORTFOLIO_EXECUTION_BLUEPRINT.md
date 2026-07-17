@@ -108,7 +108,7 @@ Tracker (executor updates statuses in place):
 [x] SEC-01     remove setup_git.bat
 [x] FIX-01     side-effect-free output validation
 [x] FIX-02     pdf_to_text validate-before-reserve
-[ ] FIX-03     GUI thread-safety + button lock
+[x] FIX-03     GUI thread-safety + button lock
 [ ] FIX-04     log rotation
 [ ] FIX-05     CREATE_NO_WINDOW for soffice
 [ ] TEST-01    regression tests for FIX-01/02

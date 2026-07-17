@@ -73,8 +73,8 @@ class LocalPDFConverterApp(ctk.CTk):
         self.file_count_label = ctk.CTkLabel(controls, text="0 files", anchor="w")
         self.file_count_label.grid(row=0, column=1, padx=(0, 16), pady=10, sticky="ew")
 
-        output_button = ctk.CTkButton(controls, text="Output folder", command=self._choose_output)
-        output_button.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="ew")
+        self.output_button = ctk.CTkButton(controls, text="Output folder", command=self._choose_output)
+        self.output_button.grid(row=0, column=2, padx=(0, 10), pady=10, sticky="ew")
         self.output_entry = ctk.CTkEntry(controls, textvariable=self.output_folder)
         self.output_entry.grid(row=0, column=3, pady=10, sticky="ew")
         self.output_entry.bind("<KeyRelease>", lambda _event: self._validate())
@@ -178,22 +178,38 @@ class LocalPDFConverterApp(ctk.CTk):
             self.convert_button.configure(state="disabled")
 
     def _start_conversion(self) -> None:
+        files = list(self.files)
+        output = self.output_folder.get()
+        action = self.action.get()
+        pages = self.page_ranges.get().strip() or None
         self.is_converting = True
         self.convert_button.configure(state="disabled")
+        self.choose_button.configure(state="disabled")
+        self.output_button.configure(state="disabled")
         self.progress.set(0)
         self.status.set("Starting conversion...")
-        self._write_log(f"Starting conversion: {self.action.get()}.")
+        self._write_log(f"Starting conversion: {action}.")
 
-        thread = threading.Thread(target=self._run_conversion, daemon=True)
+        thread = threading.Thread(
+            target=self._run_conversion,
+            args=(files, output, action, pages),
+            daemon=True,
+        )
         thread.start()
 
-    def _run_conversion(self) -> None:
+    def _run_conversion(
+        self,
+        files: list[Path],
+        output: str,
+        action: str,
+        pages: str | None,
+    ) -> None:
         try:
             summary = convert_files(
-                self.files,
-                self.output_folder.get(),
-                self.action.get(),
-                page_ranges=self.page_ranges.get().strip() or None,
+                files,
+                output,
+                action,
+                page_ranges=pages,
                 progress_callback=lambda done, total, message: self.event_queue.put(("progress", (done, total, message))),
                 log_callback=lambda message: self.event_queue.put(("log", message)),
             )
@@ -221,6 +237,8 @@ class LocalPDFConverterApp(ctk.CTk):
 
     def _finish_conversion(self, payload: object) -> None:
         self.is_converting = False
+        self.choose_button.configure(state="normal")
+        self.output_button.configure(state="normal")
         summary = payload
         succeeded = getattr(summary, "succeeded", 0)
         failed = getattr(summary, "failed", 0)
@@ -235,6 +253,8 @@ class LocalPDFConverterApp(ctk.CTk):
 
     def _fail_conversion(self, payload: object) -> None:
         self.is_converting = False
+        self.choose_button.configure(state="normal")
+        self.output_button.configure(state="normal")
         self.status.set(str(payload))
         self._write_log(f"Could not start conversion: {payload}")
         messagebox.showerror(APP_NAME, str(payload))
