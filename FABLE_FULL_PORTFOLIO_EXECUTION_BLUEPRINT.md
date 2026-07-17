@@ -112,7 +112,7 @@ Tracker (executor updates statuses in place):
 [x] FIX-04     log rotation
 [x] FIX-05     CREATE_NO_WINDOW for soffice
 [x] TEST-01    regression tests for FIX-01/02
-[ ] DOC-01     README corrections
+[x] DOC-01     README corrections
 [?] DOC-02     stray-artifact cleanup (user confirm)
 [?] TEST-02    Docker build+run validation
 [!] TEST-03    real Office-to-PDF verification (blocked: LibreOffice install is a user action)

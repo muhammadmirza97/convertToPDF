@@ -42,7 +42,7 @@ Run the desktop app:
 You can also use the small CLI compatibility wrapper for automatic file-to-PDF conversion:
 
 ```powershell
-.\.venv\Scripts\python.exe convert_to_pdf.py "sample_files\example.txt" -o output
+.\.venv\Scripts\python.exe convert_to_pdf.py "C:\path\to\your\notes.txt" -o output
 ```
 
 ## LibreOffice Support
@@ -106,6 +106,7 @@ Build and test:
 
 ```powershell
 docker build -t local-pdf-converter .
+docker run --rm local-pdf-converter
 ```
 
 ## Future Windows EXE Packaging

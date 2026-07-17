@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-17 Portfolio Blueprint Execution
+
+### Reliability and Security
+
+- Pinned runtime and development dependencies and removed the unused `img2pdf` package.
+- Fixed Docker builds from a clean clone and documented the container test command.
+- Removed the obsolete repository setup script that could delete Git history.
+- Made output-folder validation side-effect free and validated encrypted PDFs before reserving output paths.
+- Snapshotted GUI state before worker-thread conversion and locked file/folder controls during a run.
+- Added bounded log rotation and suppressed LibreOffice console windows on Windows.
+
+### Tests and Documentation
+
+- Added regression tests for side-effect-free folder validation and encrypted-PDF extraction.
+- Updated setup, CLI, and Docker commands in the README.
+
 ## 2026-06-30 Review, Debugging, Hardening, and Improvement Pass
 
 ### Bug Fixes
