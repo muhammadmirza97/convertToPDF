@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 import shutil
 import subprocess
 import tempfile
@@ -58,6 +59,7 @@ def convert_office_to_pdf(
             text=True,
             timeout=timeout_seconds,
             check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0,
         )
         generated = Path(temp_dir) / f"{source.stem}.pdf"
         if completed.returncode != 0 or not generated.exists():
