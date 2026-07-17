@@ -110,12 +110,12 @@ def pdf_to_png(input_path: str | Path, output_dir: str | Path, *, dpi: int = 150
 
 def pdf_to_text(input_path: str | Path, output_dir: str | Path) -> Path:
     source = Path(input_path)
-    output_path = safe_output_path(output_dir, source.stem, ".txt")
     chunks: list[str] = []
 
     with fitz.open(source) as document:
         if document.needs_pass:
             raise ValueError(f"Encrypted PDF needs password support: {source.name}")
+        output_path = safe_output_path(output_dir, source.stem, ".txt")
         for page_number, page in enumerate(document, start=1):
             chunks.append(f"--- Page {page_number} ---\n")
             chunks.append(page.get_text().strip())

@@ -107,7 +107,7 @@ Tracker (executor updates statuses in place):
 [?] ENV-04     recreate .venv (manual, optional)
 [x] SEC-01     remove setup_git.bat
 [x] FIX-01     side-effect-free output validation
-[ ] FIX-02     pdf_to_text validate-before-reserve
+[x] FIX-02     pdf_to_text validate-before-reserve
 [ ] FIX-03     GUI thread-safety + button lock
 [ ] FIX-04     log rotation
 [ ] FIX-05     CREATE_NO_WINDOW for soffice
