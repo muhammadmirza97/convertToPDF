@@ -103,7 +103,7 @@ Tracker (executor updates statuses in place):
 [x] GLOBAL-01  backup branch/tag
 [x] ENV-01     pin requirements
 [x] ENV-02     remove img2pdf
-[ ] ENV-03     fix Dockerfile clean-clone break
+[x] ENV-03     fix Dockerfile clean-clone break
 [?] ENV-04     recreate .venv (manual, optional)
 [ ] SEC-01     remove setup_git.bat
 [ ] FIX-01     side-effect-free output validation
