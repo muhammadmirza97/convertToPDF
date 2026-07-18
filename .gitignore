@@ -8,6 +8,9 @@ logs/*.log
 output/*
 !output/.gitkeep
 sample_files/generated_*
+sample_files/.libreoffice_profile/
+sample_files/legacy/
+/Local PDF Converter.lnk
 build/
 dist/
 *.spec

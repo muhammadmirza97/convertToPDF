@@ -14,6 +14,8 @@ from .config import (
     ACTION_PDF_TO_TEXT,
     ACTION_SPLIT_PDF,
     ACTION_TXT_TO_PDF,
+    ACTIONS,
+    HTML_EXTENSIONS,
     IMAGE_EXTENSIONS,
     OFFICE_EXTENSIONS,
     PDF_EXTENSIONS,
@@ -44,6 +46,8 @@ def detect_input_types(files: list[str | Path]) -> set[str]:
             types.add("pdf")
         elif ext in TEXT_EXTENSIONS:
             types.add("text")
+        elif ext in HTML_EXTENSIONS:
+            types.add("html")
         elif ext in OFFICE_EXTENSIONS:
             types.add("office")
         else:
@@ -129,8 +133,28 @@ def validate_action(
             return ValidationResult(False, "Office to PDF needs DOC/DOCX/PPT/PPTX/XLS/XLSX files.", file_result.files)
         if not libreoffice_available:
             return ValidationResult(False, "LibreOffice was not found, so Office conversion is unavailable.", file_result.files)
+    elif action == "Compare PDF":
+        if len(file_result.files) != 2 or any(ext not in PDF_EXTENSIONS for ext in exts):
+            return ValidationResult(False, "Compare needs exactly two PDF files.", file_result.files)
+    elif action == "HTML to PDF":
+        if any(ext not in HTML_EXTENSIONS for ext in exts):
+            return ValidationResult(False, "HTML to PDF needs local HTML files.", file_result.files)
+    elif action == "PDF to PDF/A":
+        if any(ext not in PDF_EXTENSIONS for ext in exts):
+            return ValidationResult(False, "PDF/A conversion needs PDF files.", file_result.files)
+        if not libreoffice_available:
+            return ValidationResult(False, "LibreOffice was not found, so PDF/A conversion is unavailable.", file_result.files)
+    elif action in {"PDF to Word", "PDF to PowerPoint", "PDF to Excel", "PDF to JPG", "Organize PDF",
+                    "Compress PDF", "Repair PDF", "OCR PDF", "Edit PDF", "Watermark PDF", "Rotate PDF",
+                    "Page numbers", "Crop PDF", "PDF Forms", "Sign PDF", "Unlock PDF", "Protect PDF",
+                    "Redact PDF", "PDF to Markdown", "AI Summarizer", "Translate"}:
+        if any(ext not in PDF_EXTENSIONS for ext in exts):
+            return ValidationResult(False, f"{action} needs PDF input files.", file_result.files)
+        if action == "Organize PDF" and len(file_result.files) != 1:
+            return ValidationResult(False, "Organize PDF needs one primary PDF.", file_result.files)
+    elif action in ACTIONS:
+        return ValidationResult(True, "Ready to convert.", file_result.files)
     else:
         return ValidationResult(False, "Choose a valid conversion action.", file_result.files)
 
     return ValidationResult(True, "Ready to convert.", file_result.files)
-

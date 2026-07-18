@@ -1,6 +1,6 @@
 # Local PDF Converter
 
-Local PDF Converter is a beginner-friendly Windows desktop app for converting documents, images, and PDFs on your own computer. It does not use cloud APIs, telemetry, uploads, or paid services.
+Local PDF Converter is a Windows desktop PDF toolkit with an iLovePDF-style card interface. It does not use accounts, cloud APIs, telemetry, uploads, or paid services.
 
 ## What Works Locally
 
@@ -13,15 +13,29 @@ Works without LibreOffice:
 - Split PDFs into individual pages or selected ranges
 - PDF pages to PNG images
 - PDF text extraction
+- Organize, rotate, crop, repair, compress, watermark, page-number, edit, form-fill, sign-image, compare, protect, unlock, and true-redact PDFs
+- PDF to JPG, Markdown, Word, PowerPoint, and Excel
+- Local HTML files to PDF
+- Scan/document images to a single PDF
 
 Requires LibreOffice:
 
 - DOC/DOCX to PDF
 - PPT/PPTX to PDF
 - XLS/XLSX to PDF
+- PDF to PDF/A-1
+
+Requires the Tesseract desktop binary:
+
+- OCR PDF (`pytesseract` is installed from `requirements.txt`, but does not install Tesseract itself)
+
+Optional local intelligence:
+
+- AI Summarizer and Translate are off by default
+- They run only after the explicit panel toggle is enabled and only call localhost Ollama at `127.0.0.1:11434`
 
 If LibreOffice is missing, the app still opens and non-Office features continue to work.
-The dedicated Office-to-PDF menu option is hidden when LibreOffice is not detected.
+Cards that require a missing external binary remain visible and explain why they are unavailable.
 
 ## Windows Setup
 
@@ -38,6 +52,10 @@ Run the desktop app:
 ```powershell
 .\.venv\Scripts\python.exe run_app.py
 ```
+
+After setup, double-click `launch_app.vbs` in this folder to launch the app without a console window. You can create a personal Windows shortcut to that launcher if desired. The app closes automatically after 30 minutes without keyboard or mouse activity. An active conversion is never interrupted by the idle timer.
+
+The 30-minute default needs no configuration. For testing or a custom local timeout, set `LOCAL_PDF_CONVERTER_IDLE_TIMEOUT_SECONDS` before starting the app. Invalid values safely fall back to 1,800 seconds.
 
 You can also use the small CLI compatibility wrapper for automatic file-to-PDF conversion:
 
@@ -66,37 +84,35 @@ The tests generate simple sample files under `sample_files/generated_pytest/` an
 ## Project Structure
 
 ```text
-run_app.py
-convert_to_pdf.py
-requirements.txt
-src/
-  app.py
-  converter.py
-  file_validation.py
-  pdf_tools.py
-  office_tools.py
-  image_tools.py
-  text_tools.py
-  output_paths.py
-  logger.py
-  config.py
-tests/
-docs/
-sample_files/
-output/
-logs/
+launch_app.vbs            Portable console-free Windows launcher
+run_app.py                Desktop application entry point
+convert_to_pdf.py         Command-line compatibility entry point
+requirements*.txt         Runtime and development dependencies
+Dockerfile                Containerized core test environment
+
+src/                      Application code and conversion services
+tests/                    Automated test suite
+scripts/                  Developer and packaging utilities
+docs/                     Documentation, indexed by purpose
+sample_files/              Local fixtures and generated test samples
+output/                    Default converted-file destination
+logs/                      Local application logs
 ```
 
 The GUI calls `src.converter`, and the conversion logic lives in separate service modules so the core can later be reused by a CLI, local web UI, Docker test flow, or packaged Windows app.
+
+Start with [`docs/README.md`](docs/README.md) for documentation or [`scripts/README.md`](scripts/README.md) for developer utilities.
 
 ## No-Overwrite Behavior
 
 Original input files are never deleted or modified. Existing output files are not overwritten. If `report.pdf` already exists, the app creates `report_001.pdf`, `report_002.pdf`, and so on.
 Generated output names are sanitized for Windows-unsafe characters and reserved device names.
 
-## Splitting PDFs
+## Tool Notes
 
 For the Split PDF action, leave the Pages field blank to split every page into a separate PDF. Enter ranges such as `1-3,5` to create selected page outputs.
+
+PDF-to-Word/PowerPoint/Excel extraction is text/table-first and complex layout is approximate. Sign places an image signature and is not a cryptographic digital signature. Unlock requires the correct user password; it does not crack or brute-force passwords. Redact permanently removes matching content before saving.
 
 ## Docker Notes
 
@@ -115,7 +131,7 @@ PyInstaller can be tried later after the app is stable:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pip install pyinstaller
-.\build_exe.ps1
+.\scripts\build_exe.ps1
 ```
 
 Packaging is not required for normal use. Run `python run_app.py` during development.
@@ -126,7 +142,7 @@ Packaging is not required for normal use. Run `python run_app.py` during develop
 - If Office files do not convert, install LibreOffice and make sure `soffice.exe` is on PATH or in a standard install folder.
 - If the Office-to-PDF action is missing, LibreOffice was not detected. Other actions are still available.
 - If PDF split reports a page range error, use numbers like `1-3,5` and make sure the pages exist in the PDF.
-- If PDF text extraction returns little or no text, the PDF may be scanned. OCR is not included in this version.
+- If PDF text extraction returns little or no text, install the Tesseract desktop binary and use OCR PDF.
 - Detailed errors are written to `logs/app.log`. Logs record actions, filenames, output names, and technical failures, but not document contents.
 
 ## Privacy

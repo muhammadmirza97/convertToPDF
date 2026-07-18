@@ -18,7 +18,7 @@
 | Links/mounts/worktrees/submodules | None found (C) |
 | Inaccessible items | None inside ROOT |
 | Assumptions | `logs/app.log` and `sample_files/generated_pytest/*` content treated as historical evidence, not current verification |
-| Generated files | Exactly one: `ROOT\FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md` (this file) |
+| Generated files | Exactly one blueprint, now archived at `docs/design/FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md` (this file) |
 | Mutation proof | No project file created/modified/deleted. Verification commands used `python -B` (no bytecode written) and `pytest --collect-only -p no:cacheprovider` (no cache written). Full `pytest` was **not** run in this pass because it writes `sample_files/generated_pytest/` and `logs/app.log`. |
 
 Inspected paths (all under ROOT): all 32 git-tracked files (`git ls-files` enumerated), plus `.venv/pyvenv.cfg`, `pip list` of `.venv`, `logs/app.log` (tail), `sample_files/` listing, `__pycache__/` listing, `.pytest_cache/` listing.
@@ -45,7 +45,7 @@ Inspected paths (all under ROOT): all 32 git-tracked files (`git ls-files` enume
 - repo/branch: `convertToPDF` remote; `main` @ 683f823 ("Build and harden Local PDF Converter"); backup branch `local-build-backup` @ 04dd2ed
 - purpose: local-only Windows desktop app converting images/TXT/Office↔PDF, merge/split PDFs, PDF→PNG, PDF→text; explicit no-cloud/no-telemetry promise
 - users: beginner Windows users (per README); developer: Mirza
-- requirements: README + `docs/KNOWN_LIMITATIONS.md` serve as the requirement record; no external rubric found (C)
+- requirements: README + `docs/reference/KNOWN_LIMITATIONS.md` serve as the requirement record; no external rubric found (C)
 - state: **Working with known weaknesses** (historical QA report 2026-06-30 claims "22 passed"; this pass verified imports + collection only — full pass is executor's first validation gate)
 - stack: Python 3.12.10, customtkinter 6.0.0 (GUI), pymupdf 1.28.0 (render/extract), pypdf 6.14.2 (merge/split/encrypt-detect), pillow 12.2.0 (images), reportlab 5.0.0 (TXT→PDF), pytest 9.1.1; optional external LibreOffice headless
 - models/data/APIs/DB/infra: none — pure local file transforms; no network code found (C, grepped source)
@@ -54,7 +54,7 @@ Inspected paths (all under ROOT): all 32 git-tracked files (`git ls-files` enume
 - tests+commands: 22 tests in `tests/` (collection verified this pass); `.\.venv\Scripts\python.exe -m pytest -q`
 - dependency/env files: `requirements.txt` (7 unpinned names, incl. unused `img2pdf` and dev-only `pytest`); no lockfile; no `.env` (none needed)
 - env vars: none used (C)
-- deployment: local venv run; optional PyInstaller (`build_exe.ps1`, unverified); Docker for tests only
+- deployment: local venv run; optional PyInstaller (`scripts/build_exe.ps1`, unverified); Docker for tests only
 - outputs: `output/` default dir; `logs/app.log`
 - slides/reports/rubrics: `docs/` QA_REPORT, REVIEW_NOTES, SECURITY_REVIEW, CHANGELOG, KNOWN_LIMITATIONS, BUG_REPORT_TEMPLATE (all read; internally consistent with code as of Jun 30)
 - strengths: separation of GUI/orchestration/tools; output-name sanitization + containment checks; graceful encrypted-PDF and missing-LibreOffice handling; batch partial-failure isolation; privacy-conscious logging
@@ -298,7 +298,7 @@ All commands: OS=Windows 11, shell=PowerShell, workingDir=ROOT, prereq=`.venv` e
 | V5 | CLI E2E (real pipeline) | `.\.venv\Scripts\python.exe convert_to_pdf.py "<in-ROOT .txt>" -o output` | exit 0, `Created: ...pdf` | `output/*.pdf`, log |
 | V6 | GUI smoke | `.\.venv\Scripts\python.exe -c "from src.app import LocalPDFConverterApp; app=LocalPDFConverterApp(); app.after(200, app.destroy); app.mainloop(); print('GUI_SMOKE_OK')"` | `GUI_SMOKE_OK` | log |
 | V7 | Docker | `docker build -t local-pdf-converter .` + `docker run --rm local-pdf-converter` | build ok; tests pass in container | Docker image (engine-managed) |
-| V8 | no secrets | `git grep -iE "password=|api_key|secret_key|token=" -- ':!FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md'` | no credential hits (encrypt("secret") in tests is a test fixture, allowed) | none |
+| V8 | no secrets | `git grep -iE "password=|api_key|secret_key|token=" -- ':!docs/design/FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md'` | no credential hits (encrypt("secret") in tests is a test fixture, allowed) | none |
 | V9 | Office real run | manual (TEST-03) | PDF produced | output/ |
 
 Common failure/recovery: V3 failing after a FIX task → do **not** edit the test; `git revert` the fix commit and re-diagnose.
@@ -326,7 +326,7 @@ Security audit (file-level, all C):
 | Path traversal | mitigated | `sanitize_base_name` + `_assert_inside_directory` + tests | preserve | existing tests |
 | Git history secrets | U (not scanned) | — | executor: `git log -p --all \| Select-String -Pattern "api_key","password="` (read-only) | no hits |
 | Docker | low | test-only image; no ports/volumes/secrets | ENV-03 only | V7 |
-| Logs privacy | ok for new lines | historical pre-hardening lines may hold full paths (`docs/SECURITY_REVIEW.md` notes this) | optional user log clear (manual) | — |
+| Logs privacy | ok for new lines | historical pre-hardening lines may hold full paths (`docs/reviews/SECURITY_REVIEW.md` notes this) | optional user log clear (manual) | — |
 
 README plan: preserve everything except the three DOC-01 corrections (rewrite those lines only). `docs/*` preserved as historical records; add one CHANGELOG entry describing this blueprint's executed changes (append-only).
 
@@ -380,7 +380,7 @@ Final boundary proof: every path read or listed in this audit resolves under `C:
 
 You are the executor for `C:\dev\PDF Converter` (ROOT). Rules:
 1. Never read, write, or list anything outside ROOT; never use `..`; resolve every path first; store all temp/log/output data inside ROOT.
-2. Read `FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md` fully before acting. It is the single source of truth; do not redesign.
+2. Read `docs/design/FABLE_FULL_PORTFOLIO_EXECUTION_BLUEPRINT.md` fully before acting. It is the single source of truth; do not redesign.
 3. Execute tasks in tracker order (§5): GLOBAL-01 → ENV-01/02 → ENV-03 → SEC-01 → FIX-01 → FIX-02 → FIX-03 → FIX-04 → FIX-05 → TEST-01 → DOC-01 → TEST-02 → PORT-01. One task = one commit = one tracker status update ([ ]→[~]→[x]/[!]/[F], with [?] for manual items).
 4. Preserve every LOCK in §6A. Never change GUI wording, action names, output-naming, exit codes, or validation messages except where a task explicitly states the exact new text.
 5. Follow the exact code specs in §6G — signatures, logic blocks, file paths, and pinned versions are decisions already made; do not substitute.
