@@ -1,0 +1,7 @@
+customtkinter
+pymupdf
+pypdf
+pillow
+img2pdf
+reportlab
+pytest
