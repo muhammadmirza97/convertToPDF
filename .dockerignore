@@ -3,9 +3,7 @@ __pycache__/
 .pytest_cache/
 logs/*.log
 output/*
-sample_files/generated_pytest/
 build/
 dist/
 *.spec
 .git/
-

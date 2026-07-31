@@ -1,3 +1,6 @@
+# Runs the core test suite in a clean Linux container.
+# The Windows GUI is not part of this image; the GUI tests skip themselves without a display.
+
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -8,8 +11,7 @@ RUN python -m pip install --no-cache-dir --upgrade pip \
 
 COPY src ./src
 COPY tests ./tests
-COPY sample_files ./sample_files
-COPY run_app.py convert_to_pdf.py ./
+COPY assets ./assets
+COPY run_app.py cli.py ./
 
 CMD ["python", "-m", "pytest", "-q"]
-

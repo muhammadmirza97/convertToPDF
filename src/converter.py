@@ -1,31 +1,28 @@
-"""High-level conversion orchestration used by the GUI and tests."""
+"""Tool orchestration used by the GUI, the CLI and tests."""
 
 from __future__ import annotations
 
+import inspect
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from .config import (
-    ACTION_AUTO,
-    ACTION_IMAGES_TO_SINGLE_PDF,
-    ACTION_MERGE_PDFS,
-    ACTION_OFFICE_TO_PDF,
-    ACTION_PDF_TO_PNG,
-    ACTION_PDF_TO_TEXT,
-    ACTION_SPLIT_PDF,
-    ACTION_TXT_TO_PDF,
+    HTML_EXTENSIONS,
     IMAGE_EXTENSIONS,
     OFFICE_EXTENSIONS,
     PDF_EXTENSIONS,
+    REQUIRES_LIBREOFFICE,
     TEXT_EXTENSIONS,
 )
-from .file_validation import validate_action
-from .image_tools import image_to_pdf, images_to_single_pdf
+from .file_validation import missing_dependencies, validate_tool
+from .html_tools import html_to_pdf
+from .image_tools import image_to_pdf
 from .logger import setup_logging
 from .office_tools import convert_office_to_pdf, find_libreoffice
-from .pdf_tools import merge_pdfs, pdf_to_png, pdf_to_text, split_pdf
 from .text_tools import txt_to_pdf
+from .tool_registry import Tool, get_tool
+from .tool_result import ToolOutput
 
 ProgressCallback = Callable[[int, int, str], None]
 LogCallback = Callable[[str], None]
@@ -55,6 +52,10 @@ class ConversionSummary:
     def ok(self) -> bool:
         return self.failed == 0
 
+    @property
+    def outputs(self) -> list[Path]:
+        return [output for result in self.results for output in result.outputs]
+
 
 def _log(message: str, callback: LogCallback | None) -> None:
     if callback:
@@ -66,40 +67,99 @@ def _progress(done: int, total: int, message: str, callback: ProgressCallback | 
         callback(done, total, message)
 
 
-def convert_files(
+def auto_convert_one(path: Path, output_dir: Path, **options: Any) -> Path:
+    """Convert one non-PDF file to PDF based on its extension."""
+    ext = path.suffix.lower()
+    if ext in IMAGE_EXTENSIONS:
+        return image_to_pdf(path, output_dir)
+    if ext in TEXT_EXTENSIONS:
+        return txt_to_pdf(path, output_dir)
+    if ext in HTML_EXTENSIONS:
+        return html_to_pdf(path, output_dir)
+    if ext in OFFICE_EXTENSIONS:
+        return convert_office_to_pdf(path, output_dir, soffice_path=options.get("soffice_path"))
+    if ext in PDF_EXTENSIONS:
+        raise ValueError("PDF input has no automatic PDF conversion. Choose a PDF action.")
+    raise ValueError(f"Unsupported file type: {ext}")
+
+
+def _normalize(result: Any) -> tuple[list[Path], str]:
+    if isinstance(result, ToolOutput):
+        return list(result.outputs), result.note
+    if isinstance(result, Path):
+        return [result], ""
+    if isinstance(result, (list, tuple)):
+        return [Path(item) for item in result], ""
+    if result is None:
+        return [], ""
+    return [Path(result)], ""
+
+
+def _accepts_soffice(processor: Callable[..., Any]) -> bool:
+    try:
+        signature = inspect.signature(processor)
+    except (TypeError, ValueError):
+        return False
+    if "soffice_path" in signature.parameters:
+        return True
+    return any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD
+        for parameter in signature.parameters.values()
+    )
+
+
+def run_tool(
+    tool: Tool | str,
     files: list[str | Path],
     output_dir: str | Path,
-    action: str,
+    options: dict[str, Any] | None = None,
     *,
-    page_ranges: str | None = None,
     progress_callback: ProgressCallback | None = None,
     log_callback: LogCallback | None = None,
 ) -> ConversionSummary:
-    """Convert files for the selected action and keep batch errors isolated."""
+    """Run one registered tool over the chosen files, isolating per-file failures."""
+    resolved = tool if isinstance(tool, Tool) else get_tool(tool)
     logger = setup_logging()
     soffice = find_libreoffice()
+    missing = missing_dependencies()
+    if soffice is None:
+        missing.add(REQUIRES_LIBREOFFICE)
+    else:
+        missing.discard(REQUIRES_LIBREOFFICE)
+
     logger.info(
-        "Starting conversion action=%s file_count=%s output_folder=%s libreoffice=%s",
-        action,
+        "Starting tool=%s file_count=%s output_folder=%s libreoffice=%s",
+        resolved.id,
         len(files),
         Path(output_dir).name or "selected folder",
         "detected" if soffice else "not detected",
     )
-    validation = validate_action(files, output_dir, action, libreoffice_available=soffice is not None)
+
+    validation = validate_tool(resolved, files, output_dir, missing_dependencies=missing)
     if not validation.ok:
-        logger.warning("Conversion validation failed: %s", validation.message)
+        logger.warning("Validation failed for %s: %s", resolved.id, validation.message)
         raise ValueError(validation.message)
+
+    values = resolved.coerce_options(options)
+    if _accepts_soffice(resolved.processor):
+        values["soffice_path"] = soffice
 
     paths = validation.files
     summary = ConversionSummary()
 
-    def record_success(input_path: Path | None, outputs: list[Path], message: str) -> None:
-        logger.info("%s | output_count=%s output_names=%s", message, len(outputs), [path.name for path in outputs])
+    def record_success(input_path: Path | None, outputs: list[Path], note: str) -> None:
+        label = input_path.name if input_path else f"{len(paths)} file(s)"
+        message = f"{resolved.label}: {label}"
+        if note:
+            message = f"{message} - {note}"
+        if outputs:
+            message = f"{message} -> {', '.join(output.name for output in outputs)}"
+        logger.info("%s | output_count=%s", message, len(outputs))
         _log(message, log_callback)
         summary.results.append(ConversionResult(input_path, outputs, True, message))
 
     def record_failure(input_path: Path | None, exc: Exception) -> None:
-        label = input_path.name if input_path else "conversion"
+        label = input_path.name if input_path else resolved.label
         message = f"Failed: {label} - {exc}"
         if isinstance(exc, ValueError):
             logger.warning(message)
@@ -108,21 +168,11 @@ def convert_files(
         _log(message, log_callback)
         summary.results.append(ConversionResult(input_path, [], False, message))
 
-    if action == ACTION_MERGE_PDFS:
-        _progress(0, 1, "Merging PDFs...", progress_callback)
+    if not resolved.batch:
+        _progress(0, 1, f"Running {resolved.label}...", progress_callback)
         try:
-            output = merge_pdfs(paths, output_dir)
-            record_success(None, [output], f"Merged {len(paths)} PDFs into {output.name}.")
-        except Exception as exc:
-            record_failure(None, exc)
-        _progress(1, 1, "Done.", progress_callback)
-        return summary
-
-    if action == ACTION_IMAGES_TO_SINGLE_PDF:
-        _progress(0, 1, "Combining images...", progress_callback)
-        try:
-            output = images_to_single_pdf(paths, output_dir)
-            record_success(None, [output], f"Combined {len(paths)} images into {output.name}.")
+            outputs, note = _normalize(resolved.processor(list(paths), output_dir, **values))
+            record_success(None, outputs, note)
         except Exception as exc:
             record_failure(None, exc)
         _progress(1, 1, "Done.", progress_callback)
@@ -132,8 +182,8 @@ def convert_files(
     for index, path in enumerate(paths, start=1):
         _progress(index - 1, total, f"Working on {path.name}...", progress_callback)
         try:
-            outputs = _convert_single(path, output_dir, action, page_ranges=page_ranges, soffice=soffice)
-            record_success(path, outputs, f"Converted {path.name}.")
+            outputs, note = _normalize(resolved.processor(path, output_dir, **values))
+            record_success(path, outputs, note)
         except Exception as exc:
             record_failure(path, exc)
         _progress(index, total, f"Finished {path.name}.", progress_callback)
@@ -141,36 +191,3 @@ def convert_files(
     return summary
 
 
-def _convert_single(
-    path: Path,
-    output_dir: str | Path,
-    action: str,
-    *,
-    page_ranges: str | None,
-    soffice: Path | None,
-) -> list[Path]:
-    ext = path.suffix.lower()
-
-    if action == ACTION_AUTO:
-        if ext in IMAGE_EXTENSIONS:
-            return [image_to_pdf(path, output_dir)]
-        if ext in TEXT_EXTENSIONS:
-            return [txt_to_pdf(path, output_dir)]
-        if ext in OFFICE_EXTENSIONS:
-            return [convert_office_to_pdf(path, output_dir, soffice_path=soffice)]
-        if ext in PDF_EXTENSIONS:
-            raise ValueError("PDF input has no automatic PDF conversion. Choose a PDF action.")
-        raise ValueError(f"Unsupported file type: {ext}")
-
-    if action == ACTION_PDF_TO_PNG:
-        return pdf_to_png(path, output_dir)
-    if action == ACTION_PDF_TO_TEXT:
-        return [pdf_to_text(path, output_dir)]
-    if action == ACTION_SPLIT_PDF:
-        return split_pdf(path, output_dir, page_ranges=page_ranges)
-    if action == ACTION_TXT_TO_PDF:
-        return [txt_to_pdf(path, output_dir)]
-    if action == ACTION_OFFICE_TO_PDF:
-        return [convert_office_to_pdf(path, output_dir, soffice_path=soffice)]
-
-    raise ValueError(f"Unsupported action: {action}")

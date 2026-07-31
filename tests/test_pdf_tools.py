@@ -61,6 +61,6 @@ def test_encrypted_pdf_fails_gracefully(workspace):
     try:
         pdf_to_text(encrypted, workspace)
     except ValueError as exc:
-        assert "Encrypted PDF" in str(exc)
+        assert "password protected" in str(exc)
     else:
         raise AssertionError("Expected encrypted PDF failure")

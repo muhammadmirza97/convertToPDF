@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import re
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 WINDOWS_RESERVED_NAMES = {
@@ -51,9 +51,21 @@ def is_writable_directory(path: str | Path) -> bool:
         return False
 
 
+def _last_path_component(value: str) -> str:
+    """Return the final path component, treating / and \\ as separators everywhere.
+
+    Doing this before Path.stem keeps behaviour identical on Windows and POSIX, where
+    a backslash would otherwise be an ordinary filename character.
+    """
+    normalized = value.replace("\\", "/")
+    parts = [part for part in normalized.split("/") if part not in ("", ".", "..")]
+    return parts[-1] if parts else ""
+
+
 def sanitize_base_name(base_name: str | Path) -> str:
     """Return a Windows-safe file stem for generated output names."""
-    stem = Path(str(base_name)).stem.strip()
+    raw = _last_path_component(str(base_name)).strip()
+    stem = PurePosixPath(raw).stem.strip() if raw else ""
     stem = INVALID_FILENAME_CHARS.sub("_", stem)
     stem = re.sub(r"_+", "_", stem).strip(" ._")
     if not stem:

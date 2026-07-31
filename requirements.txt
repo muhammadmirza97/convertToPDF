@@ -1,7 +1,12 @@
-customtkinter
-pymupdf
-pypdf
-pillow
-img2pdf
-reportlab
-pytest
+# Version ranges are constrained so a fresh install stays reproducible.
+customtkinter>=5.2,<7
+pymupdf>=1.24,<2
+pypdf>=5,<7
+pikepdf>=8,<11
+cryptography>=3.1
+pillow>=10,<14
+reportlab>=4,<6
+openpyxl>=3.1,<4
+python-pptx>=1,<2
+tkinterdnd2>=0.4,<1
+pytest>=8,<10

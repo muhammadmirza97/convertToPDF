@@ -1,13 +1,17 @@
 __pycache__/
 *.pyc
-.venv/
 *.pyo
 *.pyd
+.venv/
 .pytest_cache/
+
+# Runtime output, kept as empty folders
 logs/*.log
 output/*
 !output/.gitkeep
-sample_files/generated_*
+output/signatures/
+
+# PyInstaller
 build/
 dist/
 *.spec
