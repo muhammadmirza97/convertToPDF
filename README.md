@@ -26,7 +26,7 @@ uploads, no accounts, no telemetry and no paid services.
 | Extract images from PDF | Saves the embedded pictures in their original format |
 | PDF to text | Page selection |
 | PDF to Markdown | Headings guessed from font size; best effort |
-| PDF to Word | Editable .docx — needs LibreOffice; best effort on complex layouts |
+| PDF to Word | Editable .docx — needs LibreOffice; best effort on complex layouts, with searchable-text recovery if Writer imports raw PDF |
 | PDF to Excel | Detected tables, or plain text lines, as worksheets |
 | PDF to PowerPoint | One slide per page, page text in the speaker notes |
 | PDF to PDF/A | PDF/A-1b, 2b or 3b for archiving — needs LibreOffice |

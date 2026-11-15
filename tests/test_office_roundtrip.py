@@ -22,6 +22,8 @@ def test_pdf_to_word_keeps_the_text(sample_pdf, workspace):
     with zipfile.ZipFile(output) as archive:
         document_xml = archive.read("word/document.xml").decode("utf-8", "replace")
     assert "Sample page 1" in document_xml
+    assert "Sample page 3" in document_xml
+    assert "%PDF-" not in document_xml
 
 
 def test_pdf_to_pdfa_tags_the_file_as_archival(sample_pdf, workspace):
