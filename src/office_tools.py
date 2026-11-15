@@ -111,14 +111,47 @@ def pdf_to_word(
     *,
     soffice_path: str | Path | None = None,
 ) -> Path:
-    """Best-effort PDF to DOCX using the LibreOffice Writer PDF import filter."""
-    return convert_with_libreoffice(
+    """Convert a PDF to DOCX, recovering searchable text if Writer imports raw PDF."""
+    from docx import Document
+
+    output = convert_with_libreoffice(
         input_path,
         output_dir,
         target="docx",
         infilter=PDF_WRITER_IMPORT,
         soffice_path=soffice_path,
     )
+    try:
+        imported = Document(output)
+        first_text = next(
+            (paragraph.text.lstrip() for paragraph in imported.paragraphs if paragraph.text.strip()),
+            "",
+        )
+        if not first_text.startswith("%PDF-"):
+            return output
+
+        # Some LibreOffice builds fall back to opening the PDF as a plain text file.
+        import pymupdf
+
+        recovered = Document()
+        with pymupdf.open(input_path) as source:
+            page_text = [page.get_text(sort=True).strip() for page in source]
+        if not any(page_text):
+            raise RuntimeError("The PDF has no searchable text. Run OCR before converting to Word.")
+
+        for index, text in enumerate(page_text):
+            if index:
+                recovered.add_page_break()
+            for line in text.splitlines():
+                recovered.add_paragraph(line)
+        with tempfile.TemporaryDirectory(prefix=".docx_recover_", dir=output.parent) as work:
+            replacement = Path(work) / output.name
+            recovered.save(replacement)
+            replacement.replace(output)
+        return output
+    except Exception:
+        output.unlink(missing_ok=True)
+        raise
 
 
 def pdf_to_pdfa(
